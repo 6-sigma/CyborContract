@@ -1,0 +1,24 @@
+[package]
+name = "proxy"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "proxy-idl-gen"
+path = "src/main-idl-gen.rs"
+required-features = ["idl-gen"]
+
+[dependencies]
+demo-client = { path = "../demo/client" }
+sails-idl-gen = { workspace = true, optional = true }
+sails-rename.workspace = true
+
+[dev-dependencies]
+demo-client = { path = "../demo/client", features = ["with_mocks"] }
+tokio = { workspace = true, features = ["rt", "macros"] }
+
+[features]
+idl-gen = ["sails-idl-gen"]

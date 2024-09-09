@@ -1,0 +1,20 @@
+[package]
+name = "rmrk-resource"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rmrk-resource-app = { path = "../app" }
+
+[build-dependencies]
+rmrk-resource-app = { path = "../app" }
+sails-client-gen.workspace = true
+sails-idl-gen.workspace = true
+sails-rs = { workspace = true, features = ["wasm-builder"] }
+
+[dev-dependencies]
+gtest.workspace = true
+rmrk-catalog = { path = "../../catalog/wasm" }
+sails-rs.workspace = true
+thiserror-no-std.workspace = true
+tokio = { workspace = true, features = ["rt", "macros"] }

@@ -1,0 +1,17 @@
+[package]
+name = "no-svcs-prog"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+no-svcs-prog-app = { path = "../app" }
+sails-rs.workspace = true
+
+[build-dependencies]
+no-svcs-prog-app = { path = "../app" }
+sails-client-gen.workspace = true
+sails-idl-gen.workspace = true
+sails-rs = { workspace = true, features = ["wasm-builder"] }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt", "macros"] }

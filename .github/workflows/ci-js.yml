@@ -1,0 +1,132 @@
+name: "CI-CD sails-js"
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+    branches: [master]
+  push:
+    branches: [master]
+    paths:
+      - js/**
+  workflow_dispatch:
+
+env:
+  BINARYEN_VERSION: version_111
+
+jobs:
+  test:
+    if: github.event_name == 'pull_request'
+
+    runs-on: ubuntu-22.04
+    env:
+      RUSTUP_HOME: /tmp/rustup_home
+    steps:
+      - name: Cancel previous workflow runs
+        uses: styfle/cancel-workflow-action@0.12.1
+        with:
+          access_token: ${{ github.token }}
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: "Install: NodeJS 20.x"
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: "Install: pkg dependencies"
+        working-directory: js
+        run: yarn install
+
+      - name: "Install: binaryen"
+        run: |
+          sudo wget -c https://github.com/WebAssembly/binaryen/releases/download/$BINARYEN_VERSION/binaryen-$BINARYEN_VERSION-x86_64-linux.tar.gz -O - | sudo tar -xz -C .
+          sudo cp binaryen-$BINARYEN_VERSION/bin/wasm-opt /usr/bin/
+
+      - name: "Prepare: build parser"
+        run: |
+          cargo build -p sails-idl-parser --target=wasm32-unknown-unknown --release
+          wasm-opt -O4 -o ./js/parser.wasm ./target/wasm32-unknown-unknown/release/sails_idl_parser.wasm
+
+      - name: "Prepare: build sails-js"
+        working-directory: js
+        run: yarn build
+
+      - name: "Prepare: build demo app"
+        run: |
+          cargo build -p demo --release
+
+      - name: "Prepare: build demo client lib"
+        working-directory: js
+        run: |
+          node lib/app.js generate ../examples/demo/client/demo.idl -o ./test/demo
+
+      - name: "Prepare: download Gear node"
+        run: |
+          wget -O ./gear https://github.com/gear-tech/gear/releases/download/build/gear
+          chmod +x gear
+
+      - name: "Prepare: run Gear node"
+        run: |
+          nohup ./gear --dev --execution=wasm --tmp --unsafe-rpc-external --rpc-methods Unsafe --rpc-cors all &
+
+      - name: "Prepare: sleep 3 min"
+        run: sleep 180
+
+      - name: "Test: run"
+        working-directory: js
+        run: yarn test
+
+  publish-to-npm:
+    if: github.event_name == 'push'
+
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check package version
+        uses: EndBug/version-check@v2
+        id: check
+        with:
+          file-name: js/package.json
+          file-url: https://unpkg.com/sails-js@latest/package.json
+          static-checking: localIsNew
+
+      - name: Use node 18.x
+        if: steps.check.outputs.changed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+
+      - name: "Prepare: install dependencies"
+        if: steps.check.outputs.changed == 'true'
+        working-directory: js
+        run: yarn install
+
+      - name: "Install: binaryen"
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          sudo wget -c https://github.com/WebAssembly/binaryen/releases/download/$BINARYEN_VERSION/binaryen-$BINARYEN_VERSION-x86_64-linux.tar.gz -O - | sudo tar -xz -C .
+          sudo cp binaryen-$BINARYEN_VERSION/bin/wasm-opt /usr/bin/
+
+      - name: "Prepare: build parser"
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          cargo build -p sails-idl-parser --target=wasm32-unknown-unknown --release
+          wasm-opt -O4 -o ./js/parser.wasm ./target/wasm32-unknown-unknown/release/sails_idl_parser.wasm
+
+      - name: "Prepare: build sails-js"
+        if: steps.check.outputs.changed == 'true'
+        working-directory: js
+        run: yarn build
+
+      - name: Publish
+        if: steps.check.outputs.changed == 'true'
+        working-directory: js/lib
+        run: |
+          export token=$(printenv npm_token)
+          npm config set //registry.npmjs.org/:_authToken=$token
+          npm publish
+        env:
+          npm_token: ${{ secrets.NPM_TOKEN }}

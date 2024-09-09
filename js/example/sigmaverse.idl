@@ -1,0 +1,161 @@
+type CyborRace = enum {
+  Rodriguez,
+  Nguyen,
+};
+
+type CyborTemplate = struct {
+  race_name: str,
+  price: u128,
+  basic_damage: u32,
+  basic_hp: u32,
+  basic_move_speed: u8,
+  basic_knockdown_hit: u8,
+  score_per_block: u64,
+};
+
+type CyborMetadata = struct {
+  race: CyborRace,
+  cybor_template: CyborTemplate,
+  is_have_finishing_skill: bool,
+  mint_at: u32,
+  image: str,
+};
+
+type CyborStream = struct {
+  race_name: str,
+  basic_damage: u32,
+  basic_hp: u32,
+  basic_move_speed: u8,
+  basic_knockdown_hit: u8,
+  score_per_block: u64,
+  is_have_finishing_skill: bool,
+  mint_at: u32,
+  image: str,
+  level: u16,
+  grade: u16,
+  lucky: u32,
+  exp: u128,
+  is_freeze: bool,
+};
+
+type CyborNftDebugInfo = struct {
+  source: actor_id,
+  value: u128,
+  temp: CyborTemplate,
+  minted_count: u128,
+  owner_by_id: vec struct { u256, actor_id },
+  token_group_by_owner_len: u128,
+  my_tokens1: vec u256,
+  my_tokens2: vec u256,
+  next_token_id: u256,
+};
+
+type ImprintTemplate = struct {
+  race_name: str,
+  max_lumimemories: u128,
+  story: str,
+  lumimemories_per_block: u64,
+  price: u128,
+};
+
+type ImprintMetadata = struct {
+  race: CyborRace,
+  imprint_template: ImprintTemplate,
+  mint_at: u32,
+  image: str,
+};
+
+type ImprintStream = struct {
+  race_name: str,
+  max_lumimemories: u128,
+  mint_at: u32,
+  story: str,
+  lumimemories: u64,
+  open_story: vec u32,
+  start_at: u32,
+};
+
+type ImprintNftDebugInfo = struct {
+  source: actor_id,
+  value: u128,
+  temp: ImprintTemplate,
+  minted_count: u128,
+  owner_by_id: vec struct { u256, actor_id },
+  token_group_by_owner_len: u128,
+  my_tokens1: vec u256,
+  my_tokens2: vec u256,
+  next_token_id: u256,
+};
+
+constructor {
+  Default : ();
+};
+
+service CyborNft {
+  Burn : (token_id: u256) -> null;
+  Freeze : (token_id: u256) -> null;
+  GetTemplate : (race: CyborRace) -> CyborTemplate;
+  Mint : (race: CyborRace) -> null;
+  Unfreeze : (token_id: u256) -> null;
+  UpLevel : (token_id: u256) -> null;
+  Approve : (approved: actor_id, token_id: u256) -> null;
+  Transfer : (to: actor_id, token_id: u256) -> null;
+  TransferFrom : (from: actor_id, to: actor_id, token_id: u256) -> null;
+  query AllCybors : () -> vec struct { u256, CyborMetadata };
+  query AllMyCybors : () -> vec struct { u256, CyborStream };
+  query CyborInfo : (token_id: u256) -> CyborStream;
+  query CyborMetadata : (token_id: u256) -> CyborMetadata;
+  query DebugInfo : (race: CyborRace) -> CyborNftDebugInfo;
+  query MaxSupply : () -> u32;
+  query BalanceOf : (owner: actor_id) -> u256;
+  query GetApproved : (token_id: u256) -> actor_id;
+  query Name : () -> str;
+  query OwnerOf : (token_id: u256) -> actor_id;
+  query Symbol : () -> str;
+
+  events {
+    Minted: struct { to: actor_id, value: u256, next_id: u256, len_by_minted: u32, len_by_group_user: u32 };
+    Burned: struct { from: actor_id, value: u256, msg_id: message_id };
+    Freeze: struct { from: actor_id, value: u256 };
+    UnFreeze: struct { from: actor_id, value: u256 };
+    Uplevel: struct { from: actor_id, value: u256 };
+    DEBUG: struct { value: CyborNftDebugInfo };
+    Transfer: struct { from: actor_id, to: actor_id, token_id: u256 };
+    Approval: struct { owner: actor_id, approved: actor_id, token_id: u256 };
+  }
+};
+
+service ImprintNft {
+  Burn : (token_id: u256) -> null;
+  Combine : (token_id: u256) -> null;
+  Deposit : (token_id: u256) -> null;
+  GetTemplate : (race: CyborRace) -> ImprintTemplate;
+  Mint : (race: CyborRace) -> null;
+  Withdraw : (token_id: u256) -> null;
+  Approve : (approved: actor_id, token_id: u256) -> null;
+  Transfer : (to: actor_id, token_id: u256) -> null;
+  TransferFrom : (from: actor_id, to: actor_id, token_id: u256) -> null;
+  query AllImprints : () -> vec struct { u256, ImprintMetadata };
+  query AllMyImprints : () -> vec struct { u256, ImprintStream };
+  query DebugInfo : (race: CyborRace) -> ImprintNftDebugInfo;
+  query ImprintInfo : (token_id: u256) -> ImprintStream;
+  query ImprintMetadata : (token_id: u256) -> ImprintMetadata;
+  query MaxSupply : () -> u32;
+  query BalanceOf : (owner: actor_id) -> u256;
+  query GetApproved : (token_id: u256) -> actor_id;
+  query Name : () -> str;
+  query OwnerOf : (token_id: u256) -> actor_id;
+  query Symbol : () -> str;
+
+  events {
+    Minted: struct { to: actor_id, value: u256, next_id: u256, len_by_minted: u32 };
+    Burned: struct { from: actor_id, value: u256 };
+    Deposit: struct { from: actor_id, value: u256 };
+    Withdraw: struct { from: actor_id, value: u256 };
+    Combine: struct { from: actor_id, value: u256 };
+    DEBUG: struct { value: ImprintNftDebugInfo };
+    Transfer: struct { from: actor_id, to: actor_id, token_id: u256 };
+    Approval: struct { owner: actor_id, approved: actor_id, token_id: u256 };
+  }
+};
+

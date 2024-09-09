@@ -1,0 +1,19 @@
+[package]
+name = "demo"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+demo-walker = { path = "../walker" }
+gstd.workspace = true
+sails-rs.workspace = true
+
+[build-dependencies]
+sails-rs = { workspace = true, features = ["wasm-builder"] }
+
+[dev-dependencies]
+futures.workspace = true
+gclient.workspace = true
+gtest.workspace = true
+demo-client = { path = "../client" }
+tokio = { workspace = true, features = ["rt", "macros"] }
